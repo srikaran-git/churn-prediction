@@ -17,7 +17,7 @@ churn-prediction/
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/YOUR_USERNAME/churn-prediction.git
+git clone https://github.com/srikaran-git/churn-prediction.git
 cd churn-prediction
 ```
 
@@ -34,4 +34,4 @@ pip install -r requirements.txt
 ```
 
 ## Author
-Your Name
+Karan
