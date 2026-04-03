@@ -2,6 +2,7 @@ project :
   name : "Churn-prediction"
   version : "1.0.0 "
   author : "Karan"
+  description : "ML system to predict customer churn"
 
 data :
   raw_path : "data/raw/churn.csv"
