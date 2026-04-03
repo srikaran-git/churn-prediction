@@ -20,6 +20,7 @@ def main():
     config = load_config()
     logger.info(f"Project: {config['project']['name']} v{config['project']['version']}")
     logger.info("Pipeline ready. More steps coming in Day 4!")
+    logger.info(f"Author    : {config['project']['author']}")
 
 
 if __name__ == "__main__":
