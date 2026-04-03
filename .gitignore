@@ -1,0 +1,32 @@
+# Virtual environment — never upload this to GitHub
+venv/
+env/
+
+# Real secrets file — NEVER upload this
+.env
+
+# Python auto-generated files — not needed
+__pycache__/
+*.py[cod]
+*.pyc
+.pytest_cache/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+*.ipynb
+
+# Data files (usually too large for GitHub)
+data/raw/
+data/processed/
+
+# Saved model files
+models/*.pkl
+models/*.joblib
+
+# Log files
+logs/
+*.log
+
+# Mac/Windows system files
+.DS_Store
+Thumbs.db
