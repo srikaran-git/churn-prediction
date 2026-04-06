@@ -2,8 +2,9 @@ import logging
 import sys
 from pathlib import Path
 
+
 def get_logger(name: str) -> logging.Logger:
-    """ 
+    """
     Create and return a configured logger .
     Use this in every file instead of print().
 
