@@ -2,15 +2,17 @@
 """
 Data Preprocessor module for the Churn Prediction pipeline.
 
-This module will handle all data cleaning and transformation steps required
-before model training.
+Responsibility: Clean and transform raw data into
+model-ready features. Nothing else.
 """
 
 # Standard Library
 from typing import List, Tuple
 
 # Third-party Libraries
+import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 # Local Modules
@@ -20,49 +22,23 @@ logger = get_logger(__name__)
 
 # Constants
 columns_to_drop = ["customerID"]
-categorical_columns = ["gender", "Partner", "Dependents", "PhoneService"]
+
+binary_columns = [
+    "gender",
+    "Partner",
+    "Dependents",
+    "PhoneService",
+    "PaperlessBilling",
+    "Churn",
+]
+
 target_column = "Churn"
 
-
-def load_raw_data(file_path: str) -> pd.DataFrame:
-    """
-    Load raw customer data from a CSV file.
-
-    Args:
-        file_path: Path to the raw CSV data file.
-
-    Returns:
-        Raw DataFrame as loaded from disk.
-
-    Raises:
-        FileNotFoundError: If the CSV file doesn't exist.
-        ValueError: If the file is empty.
-
-    Example:
-        >>> df = load_raw_data("data/raw/churn.csv")
-        >>> print(df.shape)
-        (7043, 21)
-    """
-
-    from pathlib import Path
-
-    path = Path(file_path)
-    if not path.is_file():
-        logger.error(f"File not found: {file_path}")
-        raise FileNotFoundError(f"File not found: {file_path}")
-    df = pd.read_csv(file_path)
-    if df.empty:
-        logger.error(f"File is empty: {file_path}")
-        raise ValueError(f"File is empty: {file_path}")
-
-    logger.info(
-        f"Loaded raw data from {file_path} with shape {df.shape}"
-        f" columns: {df.columns.tolist()}"
-    )
-    return df
+DEFAULT_TEST_SIZE = 0.2
+DEFAULT_RANDOM_STATE = 42
 
 
-def remove_irrelevant_columns(
+def drop_useless_columns(
     df: pd.DataFrame, columns: List[str] = columns_to_drop
 ) -> pd.DataFrame:
     """
@@ -74,12 +50,33 @@ def remove_irrelevant_columns(
     Returns:
         DataFrame with specified columns removed.
     """
-    existing_columns = [col for col in columns_to_drop if col in df.columns]
-    dropped_df = df.drop(columns=existing_columns)
-    logger.info(f"Dropped columns: {existing_columns}")
-    if not existing_columns:
-        logger.warning(f"Columns {columns_to_drop} not found in DataFrame.")
-    return dropped_df
+    cols_to_drop = [col for col in columns if col in df.columns]
+    result = df.drop(columns=cols_to_drop)
+    logger.info(f"Dropped columns: {cols_to_drop}")
+    return result
+
+
+def fix_total_charges(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert 'TotalCharges' to numeric, coercing errors to NaN.
+    """
+
+    if "TotalCharges" not in df.columns:
+        logger.warning("'TotalCharges' column not found — skipping conversion.")
+        return df
+
+    df = df.copy()
+
+    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
+
+    converted_nulls = df["TotalCharges"].isna().sum()
+
+    logger.info(
+        f"TotalCharges converted to float "
+        f"({converted_nulls} non-numeric values set to NaN)"
+    )
+
+    return df
 
 
 def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
@@ -103,18 +100,18 @@ def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 
-def encode_categorical_columns(
-    df: pd.DataFrame, columns: List[str] = categorical_columns
+def encode_binary_columns(
+    df: pd.DataFrame, columns: List[str] = binary_columns
 ) -> pd.DataFrame:
     """
-    Encode categorical variables using Label Encoding.
+    Encode binary variables using Label Encoding.
 
     Args:
-        df: Input DataFrame with categorical columns.
+        df: Input DataFrame with binary columns.
         columns: List of column names to encode.
 
     Returns:
-        DataFrame with specified categorical columns encoded as integers.
+        DataFrame with specified binary columns encoded as integers.
 
     Note:
     This modifies a copy of the DataFrame, never the original.
@@ -124,7 +121,7 @@ def encode_categorical_columns(
     df_encoded = df.copy()
     encoder = LabelEncoder()
 
-    for column in categorical_columns:
+    for column in binary_columns:
         if column not in df_encoded.columns:
             logger.warning(f"Column '{column}' not found — skipping")
             continue
@@ -132,6 +129,48 @@ def encode_categorical_columns(
         df_encoded[column] = encoder.fit_transform(df_encoded[column])
         logger.info(f"Encoded column: '{column}'")
 
+    return df_encoded
+
+
+def encode_multiclass_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    One-hot encode columns with more than 2 categories.
+
+    Columns like InternetService have values:
+    'DSL', 'Fiber optic', 'No' — these need dummy encoding.
+
+    Args:
+        df: Input DataFrame.
+
+    Returns:
+        DataFrame with multi-class columns one-hot encoded.
+    """
+    # These columns have 3+ unique values
+    multiclass_cols = [
+        "MultipleLines",
+        "InternetService",
+        "OnlineSecurity",
+        "OnlineBackup",
+        "DeviceProtection",
+        "TechSupport",
+        "StreamingTV",
+        "StreamingMovies",
+        "Contract",
+        "PaymentMethod",
+    ]
+
+    cols_present = [c for c in multiclass_cols if c in df.columns]
+
+    df_encoded = pd.get_dummies(
+        df,
+        columns=cols_present,
+        drop_first=True,  # avoid multicollinearity
+    )
+
+    logger.info(
+        f"One-hot encoded {len(cols_present)} columns. "
+        f"New shape: {df_encoded.shape}"
+    )
     return df_encoded
 
 
@@ -168,39 +207,67 @@ def split_features_and_target(
     return X, y
 
 
-def preprocess_pipeline(file_path: str) -> Tuple[pd.DataFrame, pd.Series]:
+def split_train_test(
+    X: pd.DataFrame,
+    y: pd.Series,
+    test_size: float = DEFAULT_TEST_SIZE,
+    random_state: int = DEFAULT_RANDOM_STATE,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """
-    Run the full preprocessing pipeline end-to-end.
-
-    This is the main function to call from train.py.
-    It chains all preprocessing steps in the correct order.
+    Split the data into training and testing sets.
 
     Args:
-        file_path: Path to the raw CSV data file.
+        X: Feature matrix.
+        y: Target vector.
+        test_size: Proportion of the dataset to include in the test split.
+        random_state: Controls the shuffling applied to the data before applying the split.
 
     Returns:
-        Tuple of (X, y) ready for model training.
+        Tuple of (X_train, X_test, y_train, y_test).
+    """
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+    logger.info(f"Train Size :{X_train.shape[0]} " f"Test Size :{X_test.shape[0]}")
+    return X_train, X_test, y_train, y_test
+
+
+def run_preprocessing_pipeline(
+    df: pd.DataFrame,
+    test_size: float = DEFAULT_TEST_SIZE,
+    random_state: int = DEFAULT_RANDOM_STATE,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    """
+    Run all preprocessing steps in the correct order.
+
+    This is the ONLY function train.py needs to call.
+    It chains all steps and returns train/test splits.
+
+    Args:
+        df           : Raw loaded DataFrame.
+        test_size    : Fraction for test set.
+        random_state : Seed for reproducibility.
+
+    Returns:
+        Tuple of (X_train, X_test, y_train, y_test).
 
     Example:
-        >>> X, y = preprocess_pipeline("data/raw/churn.csv")
-        >>> print(X.shape, y.shape)
+        >>> df = load_csv("data/raw/churn.csv")
+        >>> X_train, X_test, y_train, y_test = (
+        ...     run_preprocessing_pipeline(df)
+        ... )
     """
     logger.info("Starting preprocessing pipeline...")
 
-    # Step 1: Load
-    df = load_raw_data(file_path)
-
-    # Step 2: Drop useless columns
-    df = remove_irrelevant_columns(df)
-
-    # Step 3: Handle missing values
+    df = drop_useless_columns(df)
+    df = fix_total_charges(df)
     df = handle_missing_values(df)
+    df = encode_binary_columns(df)
+    df = encode_multiclass_columns(df)
 
-    # Step 4: Encode categoricals
-    df = encode_categorical_columns(df)
-
-    # Step 5: Split X and y
     X, y = split_features_and_target(df)
 
-    logger.info(f"Preprocessing complete — " f"X shape: {X.shape}, y shape: {y.shape}")
-    return X, y
+    X_train, X_test, y_train, y_test = split_train_test(X, y, test_size, random_state)
+
+    logger.info("Preprocessing pipeline complete ✓")
+    return X_train, X_test, y_train, y_test

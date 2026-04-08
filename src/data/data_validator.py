@@ -6,7 +6,9 @@ before it enters the preprocessing pipeline.
 """
 
 from typing import List
+
 import pandas as pd
+
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -44,7 +46,6 @@ def validate_required_columns(
     return True
 
 
-
 def validate_minimum_rows(
     df: pd.DataFrame,
     min_rows: int = MIN_ROWS_REQUIRED,
@@ -61,9 +62,7 @@ def validate_minimum_rows(
     """
     row_count = df.shape[0]
     if row_count < min_rows:
-        logger.error(
-            f"Not enough rows: {row_count} found, but {min_rows} required."
-        )
+        logger.error(f"Not enough rows: {row_count} found, but {min_rows} required.")
         return False
     logger.info(f"Row count sufficient: {row_count} rows.")
     return True
@@ -79,10 +78,12 @@ def validate_no_duplicate_rows(df: pd.DataFrame) -> bool:
     Returns:
         True if no duplicates, False if duplicates found.
     """
-    duplicate_count= df.duplicated().sum()
+    duplicate_count = df.duplicated().sum()
     if duplicate_count > 0:
-        logger.warning(f"Duplicate rows found in data: {duplicate_count}"
-                       f" duplicate rows ({duplicate_count/len(df):.1%} total)")
+        logger.warning(
+            f"Duplicate rows found in data: {duplicate_count}"
+            f" duplicate rows ({duplicate_count/len(df):.1%} total)"
+        )
         return False
     logger.info("No duplicate rows found.")
     return True
