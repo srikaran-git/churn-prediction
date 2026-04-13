@@ -27,10 +27,27 @@ from src.models.evaluater import (
     log_top_features,
 )
 from src.models.trainer import save_model, train_random_forest
-from src.utils.config_loader import load_config
+from src.utils.config_loader import get_env, load_config, load_env
 from src.utils.logger import get_logger
 
+load_env()  # Load environment variables from .env file
 logger = get_logger(__name__)
+
+
+def main():
+    logger.info("Starting training pipeline...")
+
+    # Load config — single source of truth
+    config = load_config()
+
+    # Use config values — no more hardcoding
+    data_path = config["data"]["raw_path"]
+    test_size = config["data"]["test_size"]
+    random_state = config["data"]["random_state"]
+    target_column = config["data"]["target_column"]
+    model_save_path = config["model"]["save_path"]
+
+    logger.info(f"App env: {get_env('APP_ENV', 'development')}")
 
 
 def run_training_pipeline() -> None:
