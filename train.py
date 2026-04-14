@@ -13,6 +13,8 @@ Run with:
     python train.py
 """
 
+import logging
+
 # ── Standard library ──────────────────────────────────────────
 import sys
 
@@ -39,6 +41,15 @@ def main():
 
     # Load config — single source of truth
     config = load_config()
+    # Load log level from config
+    log_level = config.get("logging", {}).get("level", "INFO")
+    log_file = config.get("logging", {}).get("log_file", "logs/app.log")
+
+    # Apply log level globally
+    logging.getLogger().setLevel(getattr(logging, log_level.upper(), logging.INFO))
+
+    logger.info(f"Log level set to: {log_level}")
+    logger.info(f"Logging to file: {log_file}")
 
     # Use config values — no more hardcoding
     data_path = config["data"]["raw_path"]

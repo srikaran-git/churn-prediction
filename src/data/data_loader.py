@@ -44,7 +44,7 @@ def load_csv(
     """
     path = Path(file_path)
     if not path.is_file():
-        raise FileNotFoundError(
+        raise logger.warning(
             f"File not found: {file_path}\n" f"File not found: {file_path}"
         )
 
@@ -53,7 +53,7 @@ def load_csv(
     if df.empty:
         raise ValueError(f"Loaded file is empty: {file_path}\n")
 
-    logger.info(
+    logger.debug(
         f"Loaded data from {file_path} with shape {df.shape} and columns: {df.columns.tolist()}"
     )
 

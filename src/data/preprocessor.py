@@ -200,6 +200,13 @@ def split_features_and_target(
     X = df.drop(columns=[target_column])
     y = df[target_column]
 
+    churn_rate = y.mean()
+
+    if churn_rate < 0.1 or churn_rate > 0.5:
+        logger.warning(f"Unusual churn rate detected: {churn_rate:.2%}")
+    else:
+        logger.info(f"Churn rate looks normal: {churn_rate:.2%}")
+
     logger.info(
         f"Split data into features X with shape {X.shape} "
         f"a target y with shape {y.value_counts(normalize=True)}"
@@ -269,5 +276,5 @@ def run_preprocessing_pipeline(
 
     X_train, X_test, y_train, y_test = split_train_test(X, y, test_size, random_state)
 
-    logger.info("Preprocessing pipeline complete ✓")
+    logger.info("Preprocessing pipeline complete ")
     return X_train, X_test, y_train, y_test
