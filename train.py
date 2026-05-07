@@ -1,141 +1,46 @@
-# train.py
-"""
-Main training script for the Churn Prediction model.
+# train.py  (relevant section — replace your existing model training block)
+import joblib
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
-This script orchestrates the full training pipeline:
-    1. Load raw data
-    2. Preprocess and split
-    3. Train model
-    4. Evaluate performance
-    5. Save model artifact
-
-Run with:
-    python train.py
-"""
-
-import logging
-
-# ── Standard library ──────────────────────────────────────────
-import sys
-
-# ── Internal ──────────────────────────────────────────────────
-from src.data.data_loader import get_data_summary, load_csv
-from src.data.preprocessor import run_preprocessing_pipeline
-from src.models.evaluater import (
-    evaluate_model,
-    log_classification_report,
-    log_confusion_matrix,
-    log_metrics,
-    log_top_features,
-)
-from src.models.trainer import save_model, train_random_forest
-from src.utils.config_loader import get_env, load_config, load_env
+from src.models.pipeline_builder import build_pipeline
+from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
 
-load_env()  # Load environment variables from .env file
 logger = get_logger(__name__)
 
 
-def main():
-    logger.info("Starting training pipeline...")
-
-    # Load config — single source of truth
-    config = load_config()
-    # Load log level from config
-    log_level = config.get("logging", {}).get("level", "INFO")
-    log_file = config.get("logging", {}).get("log_file", "logs/app.log")
-
-    # Apply log level globally
-    logging.getLogger().setLevel(getattr(logging, log_level.upper(), logging.INFO))
-
-    logger.info(f"Log level set to: {log_level}")
-    logger.info(f"Logging to file: {log_file}")
-
-    # Use config values — no more hardcoding
-    data_path = config["data"]["raw_path"]
-    test_size = config["data"]["test_size"]
-    random_state = config["data"]["random_state"]
-    target_column = config["data"]["target_column"]
-    model_save_path = config["model"]["save_path"]
-
-    logger.info(f"App env: {get_env('APP_ENV', 'development')}")
-
-
-def run_training_pipeline() -> None:
-    """
-    Execute the complete model training pipeline.
-
-    Steps:
-        1. Load config
-        2. Load raw data
-        3. Validate + preprocess data
-        4. Train model
-        5. Evaluate model
-        6. Save model
-    """
-    logger.info("=" * 50)
-    logger.info("CHURN PREDICTION — TRAINING PIPELINE")
-    logger.info("=" * 50)
-
-    # ── Step 1: Load config ────────────────────────────────────
-    logger.info("[1/6] Loading configuration...")
+def run_training():
     config = load_config()
 
-    raw_data_path = config["data"]["raw_path"]
-    model_save_path = config["model"]["save_path"]
-    test_size = config["data"]["test_size"]
-    random_state = config["data"]["random_state"]
-    model_params = {
-        "n_estimators": config["model"]["parameters"]["n_estimators"],
-        "max_depth": config["model"]["parameters"]["max_depth"],
-        "random_state": random_state,
-        "n_jobs": -1,
-        "class_weight": "balanced",
-    }
+    # 1. Load raw data (no manual preprocessing needed anymore)
+    from src.data.data_loader import load_data
 
-    # ── Step 2: Load data ──────────────────────────────────────
-    logger.info("[2/6] Loading raw data...")
-    df = load_csv(raw_data_path)
-    get_data_summary(df)
+    X_train, X_test, y_train, y_test = load_data(config)
 
-    # ── Step 3: Preprocess ─────────────────────────────────────
-    logger.info("[3/6] Preprocessing data...")
-    X_train, X_test, y_train, y_test = run_preprocessing_pipeline(
-        df,
-        test_size=test_size,
-        random_state=random_state,
+    # 2. Build pipeline
+    model = RandomForestClassifier(
+        n_estimators=config["model"]["parameters"]["n_estimators"],
+        max_depth=config["model"]["parameters"]["max_depth"],
+        random_state=config["data"]["random_state"],
     )
+    pipeline = build_pipeline(model)
 
-    # ── Step 4: Train ──────────────────────────────────────────
-    logger.info("[4/6] Training model...")
-    model = train_random_forest(X_train, y_train, model_params)
+    # 3. Fit — preprocessing + model training in one call
+    pipeline.fit(X_train, y_train)
+    logger.info("Pipeline training complete")
 
-    # ── Step 5: Evaluate ───────────────────────────────────────
-    logger.info("[5/6] Evaluating model...")
-    metrics = evaluate_model(model, X_test, y_test)
-    log_metrics(metrics)
-    log_classification_report(model, X_test, y_test)
-    log_confusion_matrix(model, X_test, y_test)
-    log_top_features(model, X_train.columns.tolist())
+    # 4. Evaluate
+    from src.models.evaluator import evaluate_model
 
-    # ── Step 6: Save ───────────────────────────────────────────
-    logger.info("[6/6] Saving model...")
-    save_model(model, model_save_path)
+    metrics = evaluate_model(pipeline, X_test, y_test)
+    logger.info("Metrics: %s", metrics)
 
-    logger.info("=" * 50)
-    logger.info("TRAINING PIPELINE COMPLETE ✓")
-    logger.info(f"Model saved to : {model_save_path}")
-    logger.info(f"F1 Score       : {metrics['f1_score']:.4f}")
-    logger.info(f"ROC-AUC        : {metrics['roc_auc']:.4f}")
-    logger.info("=" * 50)
+    # 5. Save
+    output_path = config["paths"]["model_output"]
+    joblib.dump(pipeline, output_path)
+    logger.info("Pipeline saved to %s", output_path)
 
 
 if __name__ == "__main__":
-    try:
-        run_training_pipeline()
-    except FileNotFoundError as e:
-        logger.error(f"File not found: {e}")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"Pipeline failed: {e}", exc_info=True)
-        sys.exit(1)
+    run_training()
