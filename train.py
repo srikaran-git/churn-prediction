@@ -3,6 +3,7 @@ import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
+from src.models.model_loader import get_model_info, save_pipeline
 from src.models.pipeline_builder import build_pipeline
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
@@ -38,8 +39,10 @@ def run_training():
 
     # 5. Save
     output_path = config["paths"]["model_output"]
-    joblib.dump(pipeline, output_path)
-    logger.info("Pipeline saved to %s", output_path)
+    save_pipeline(pipeline, output_path)
+
+    info = get_model_info(pipeline)
+    logger.info("Model info: %s", info)
 
 
 if __name__ == "__main__":
