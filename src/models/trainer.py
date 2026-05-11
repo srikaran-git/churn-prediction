@@ -1,101 +1,65 @@
-# src/models/trainer.py
-"""
-Model training module for the churn prediction pipeline.
-
-Responsibility: ONLY training the model and saving it.
-No data loading, no evaluation — just training.
-"""
-
-# ── Standard library ──────────────────────────────────────────
-from pathlib import Path
-from typing import Any, Dict
-
-# ── Third-party ───────────────────────────────────────────────
-import joblib
-import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
-# ── Internal ──────────────────────────────────────────────────
+from src.utils.exceptions import ModelTrainingError
 from src.utils.logger import get_logger
 
-logger = get_logger(__name__)
-# ── Constants ─────────────────────────────────────────────────
-DEFAULT_MODEL_PARAMS: Dict[str, Any] = {
-    "n_estimators": 100,
-    "max_depth": 10,
-    "random_state": 42,
-    "n_jobs": -1,  # use all CPU cores
-    "class_weight": "balanced",  # handles class imbalance
-}
 
+class ModelTrainer:
+    """Encapsulates model training and evaluation for churn prediction."""
 
-def train_random_forest(
-    X_train: pd.DataFrame,
-    y_train: pd.Series,
-    model_params: Dict[str, Any] = DEFAULT_MODEL_PARAMS,
-) -> RandomForestClassifier:
-    """
-    Train a Random Forest classifier on the provided training data.
+    def __init__(self, config: dict):
+        self.config = config
+        self.model = None
+        self.metrics = {}
+        self.logger = get_logger(__name__)
 
-    Args:
-        X_train: Training features.
-        y_train: Training target variable.
-        model_params: Hyperparameters for the Random Forest model.
+    def train(self, X_train, y_train):
+        """Train the model and store it on self.model."""
+        try:
+            self.logger.info("Initializing model...")
+            params = self.config.get("model", {}).get("parameters", {})
+            self.model = RandomForestClassifier(**params)
 
-    Returns:
-        Trained Random Forest model.
-    """
-    logger.info(f"Training Random Forest with parameters: {model_params}")
-    model = RandomForestClassifier(**model_params)
-    model.fit(X_train, y_train)
-    logger.info("Model training complete.")
-    return model
+            self.logger.info("Training started...")
+            self.model.fit(X_train, y_train)
+            self.logger.info("Training complete.")
 
+        except Exception as e:
+            self.logger.error("Training failed.", exc_info=True)
+            raise ModelTrainingError("Model training failed.") from e
 
-def save_model(model: RandomForestClassifier, save_path: str) -> None:
-    """
-    Save the trained model to disk using joblib.
+    def evaluate(self, X_test, y_test) -> dict:
+        """Evaluate the trained model and return metrics."""
+        if self.model is None:
+            raise ModelTrainingError("Model not trained. Call train() first.")
 
-    Args:
-        model: Trained Random Forest model to save.
-        save_path: File path where the model should be saved.
+        try:
+            preds = self.model.predict(X_test)
+            proba = self.model.predict_proba(X_test)[:, 1]
 
-    Raises:
-        IOError: If there is an issue saving the model to disk.
-    Example:
-        >>> save_model(model, "models/model_v1.pkl")
-    """
-    path = Path(save_path)
-    try:
-        joblib.dump(model, path)
-        logger.info(f"Model saved successfully at {save_path}")
-    except Exception as e:
-        logger.error(f"Failed to save model at {save_path}: {e}")
-        raise IOError(f"Failed to save model at {save_path}: {e}")
+            self.metrics = {
+                "accuracy": round(accuracy_score(y_test, preds), 4),
+                # "f1_score": round(f1_score(y_test, preds), 4),
+                "roc_auc": round(roc_auc_score(y_test, proba), 4),
+            }
 
+            for name, value in self.metrics.items():
+                self.logger.info("  %s: %s", name, value)
 
-def load_model(model_path: str) -> RandomForestClassifier:
-    """
-    Load a trained model from disk.
+            return self.metrics
 
-    Args:
-        model_path: File path to the saved model.
+        except Exception as e:
+            self.logger.error("Evaluation failed.", exc_info=True)
+            raise ModelTrainingError("Model evaluation failed.") from e
 
-    Returns:
-        Loaded Random Forest model.
+    def get_model(self):
+        """Return the trained model object."""
+        if self.model is None:
+            raise ModelTrainingError("No trained model available.")
+        return self.model
 
-    Raises:
-        IOError: If there is an issue loading the model from disk.
-
-    Example:
-        >>> model = load_model("models/model_v1.pkl")
-        >>> predictions = model.predict(X_test)
-    """
-    path = Path(model_path)
-    try:
-        model = joblib.load(path)
-        logger.info(f"Model loaded successfully from {model_path}")
-        return model
-    except Exception as e:
-        logger.error(f"Failed to load model from {model_path}: {e}")
-        raise IOError(f"Failed to load model from {model_path}: {e}")
+    def get_metrics(self) -> dict:
+        """Return the last computed metrics."""
+        return self.metrics

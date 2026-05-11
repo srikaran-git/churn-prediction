@@ -9,6 +9,7 @@ from typing import List
 
 import pandas as pd
 
+from src.utils.exceptions import DataValidationError
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -40,10 +41,10 @@ def validate_required_columns(
     """
     missing_cols = [col for col in required_columns if col not in df.columns]
     if missing_cols:
-        logger.error(f"Missing required columns: {missing_cols}")
-        return False
+        raise DataValidationError(f"Missing required columns: {missing_cols}")
     logger.info("All required columns present.")
-    return True
+
+    return df
 
 
 def validate_minimum_rows(

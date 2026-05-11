@@ -12,7 +12,6 @@ from typing import List, Tuple
 # Third-party Libraries
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 # Local Modules
@@ -29,13 +28,9 @@ binary_columns = [
     "Dependents",
     "PhoneService",
     "PaperlessBilling",
-    "Churn",
 ]
 
 target_column = "Churn"
-
-DEFAULT_TEST_SIZE = 0.2
-DEFAULT_RANDOM_STATE = 42
 
 
 def drop_useless_columns(
@@ -45,8 +40,9 @@ def drop_useless_columns(
     Remove irrelevant columns from the DataFrame.
 
     Args:
-        df: Input DataFrame.
-        columns: List of column names to drop.
+        df      : Input DataFrame.
+        columns : List of column names to drop.
+
     Returns:
         DataFrame with specified columns removed.
     """
@@ -59,45 +55,26 @@ def drop_useless_columns(
 def fix_total_charges(df: pd.DataFrame) -> pd.DataFrame:
     """
     Convert 'TotalCharges' to numeric, coercing errors to NaN.
-    """
 
+    Args:
+        df: Input DataFrame.
+
+    Returns:
+        DataFrame with TotalCharges as float.
+    """
     if "TotalCharges" not in df.columns:
         logger.warning("'TotalCharges' column not found — skipping conversion.")
         return df
 
     df = df.copy()
-
     df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 
     converted_nulls = df["TotalCharges"].isna().sum()
-
     logger.info(
         f"TotalCharges converted to float "
         f"({converted_nulls} non-numeric values set to NaN)"
     )
-
     return df
-
-
-def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Remove rows with any missing values.
-
-    In production, you might impute instead of dropping.
-    This simple strategy is a starting point.
-
-    Args:
-        df: Input DataFrame, possibly with NaN values.
-
-    Returns:
-        DataFrame with no missing values.
-    """
-    initial_shape = df.shape
-    df_clean = df.dropna()
-    logger.info(
-        f"Dropped {initial_shape[0] - df_clean.shape[0]} rows with missing values."
-    )
-    return df_clean
 
 
 def encode_binary_columns(
@@ -107,21 +84,16 @@ def encode_binary_columns(
     Encode binary variables using Label Encoding.
 
     Args:
-        df: Input DataFrame with binary columns.
-        columns: List of column names to encode.
+        df      : Input DataFrame with binary columns.
+        columns : List of column names to encode.
 
     Returns:
         DataFrame with specified binary columns encoded as integers.
-
-    Note:
-    This modifies a copy of the DataFrame, never the original.
-        For production, consider OrdinalEncoder or OneHotEncoder
-        inside an sklearn Pipeline (covered on Day 10).
     """
     df_encoded = df.copy()
     encoder = LabelEncoder()
 
-    for column in binary_columns:
+    for column in columns:
         if column not in df_encoded.columns:
             logger.warning(f"Column '{column}' not found — skipping")
             continue
@@ -145,7 +117,6 @@ def encode_multiclass_columns(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame with multi-class columns one-hot encoded.
     """
-    # These columns have 3+ unique values
     multiclass_cols = [
         "MultipleLines",
         "InternetService",
@@ -174,107 +145,60 @@ def encode_multiclass_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df_encoded
 
 
-def split_features_and_target(
-    df: pd.DataFrame,
-    target_column: str = target_column,
-) -> Tuple[pd.DataFrame, pd.Series]:
+def preprocess(
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Separate the DataFrame into feature matrix X and target vector y.
+    Apply preprocessing to already-split train and test sets.
+
+    This is what train.py calls. The split has already happened
+    in load_data() — this function only transforms features.
+
+    Critical rule: fit logic (like median fill value) is learned
+    from X_train only, then applied to X_test. Never the reverse.
 
     Args:
-        df: Full DataFrame including target column.
-        target_column: Name of the column to predict.
+        X_train : Raw training features (no target column).
+        X_test  : Raw test features (no target column).
 
     Returns:
-        Tuple of (X, y) where X is features and y is target.
-
-    Raises:
-        ValueError: If target_column is not in the DataFrame.
+        Tuple of (X_train_processed, X_test_processed).
     """
-    if target_column not in df.columns:
-        raise ValueError(
-            f"Target column '{target_column}' not found in DataFrame. "
-            f"Available columns: {list(df.columns)}"
-        )
+    logger.info("Starting preprocessing...")
 
-    X = df.drop(columns=[target_column])
-    y = df[target_column]
+    X_train = X_train.copy()
+    X_test = X_test.copy()
 
-    churn_rate = y.mean()
+    # --- Drop useless columns ---
+    X_train = drop_useless_columns(X_train)
+    X_test = drop_useless_columns(X_test)
 
-    if churn_rate < 0.1 or churn_rate > 0.5:
-        logger.warning(f"Unusual churn rate detected: {churn_rate:.2%}")
-    else:
-        logger.info(f"Churn rate looks normal: {churn_rate:.2%}")
+    # --- Fix TotalCharges ---
+    X_train = fix_total_charges(X_train)
+    X_test = fix_total_charges(X_test)
+
+    # --- Fill missing values with train median (no data leakage) ---
+    train_medians = X_train.median(numeric_only=True)
+    X_train = X_train.fillna(train_medians)
+    X_test = X_test.fillna(train_medians)  # <-- use train median, not test
+    logger.info("Missing values filled using train set medians.")
+
+    # --- Encode binary columns ---
+    X_train = encode_binary_columns(X_train)
+    X_test = encode_binary_columns(X_test)
+
+    # --- One-hot encode multiclass columns ---
+    X_train = encode_multiclass_columns(X_train)
+    X_test = encode_multiclass_columns(X_test)
+
+    # --- Align columns (test may be missing some dummies) ---
+    X_train, X_test = X_train.align(X_test, join="left", axis=1, fill_value=0)
 
     logger.info(
-        f"Split data into features X with shape {X.shape} "
-        f"a target y with shape {y.value_counts(normalize=True)}"
+        "Preprocessing complete | Train: %s | Test: %s",
+        X_train.shape,
+        X_test.shape,
     )
-    return X, y
 
-
-def split_train_test(
-    X: pd.DataFrame,
-    y: pd.Series,
-    test_size: float = DEFAULT_TEST_SIZE,
-    random_state: int = DEFAULT_RANDOM_STATE,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-    """
-    Split the data into training and testing sets.
-
-    Args:
-        X: Feature matrix.
-        y: Target vector.
-        test_size: Proportion of the dataset to include in the test split.
-        random_state: Controls the shuffling applied to the data before applying the split.
-
-    Returns:
-        Tuple of (X_train, X_test, y_train, y_test).
-    """
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state
-    )
-    logger.info(f"Train Size :{X_train.shape[0]} " f"Test Size :{X_test.shape[0]}")
-    return X_train, X_test, y_train, y_test
-
-
-def run_preprocessing_pipeline(
-    df: pd.DataFrame,
-    test_size: float = DEFAULT_TEST_SIZE,
-    random_state: int = DEFAULT_RANDOM_STATE,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-    """
-    Run all preprocessing steps in the correct order.
-
-    This is the ONLY function train.py needs to call.
-    It chains all steps and returns train/test splits.
-
-    Args:
-        df           : Raw loaded DataFrame.
-        test_size    : Fraction for test set.
-        random_state : Seed for reproducibility.
-
-    Returns:
-        Tuple of (X_train, X_test, y_train, y_test).
-
-    Example:
-        >>> df = load_csv("data/raw/churn.csv")
-        >>> X_train, X_test, y_train, y_test = (
-        ...     run_preprocessing_pipeline(df)
-        ... )
-    """
-    logger.info("Starting preprocessing pipeline...")
-
-    df = drop_useless_columns(df)
-    df = fix_total_charges(df)
-    df = handle_missing_values(df)
-    df = encode_binary_columns(df)
-    df = encode_multiclass_columns(df)
-
-    X, y = split_features_and_target(df)
-
-    X_train, X_test, y_train, y_test = split_train_test(X, y, test_size, random_state)
-
-    logger.info("Preprocessing pipeline complete ")
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test
