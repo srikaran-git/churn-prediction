@@ -88,7 +88,7 @@ def get_model_info(pipeline: Pipeline) -> dict:
 
     info = {
         "steps": [name for name, _ in pipeline.steps],
-        "model_type": type(model).__name__ if model else "unknown",
+        "model_type": type(model).__name__ if model is not None else "unknown",
         "n_features": None,
         "transformers": [],
     }

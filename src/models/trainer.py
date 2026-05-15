@@ -1,5 +1,4 @@
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
 from src.utils.exceptions import ModelTrainingError
@@ -19,7 +18,12 @@ class ModelTrainer:
         """Train the model and store it on self.model."""
         try:
             self.logger.info("Initializing model...")
-            params = self.config.get("model", {}).get("parameters", {})
+            model_cfg = self.config.get("model", {})
+            params = {
+                "n_estimators": model_cfg.get("n_estimators", 100),
+                "max_depth": model_cfg.get("max_depth", 10),
+                "random_state": model_cfg.get("random_state", 42),
+            }
             self.model = RandomForestClassifier(**params)
 
             self.logger.info("Training started...")
@@ -41,7 +45,7 @@ class ModelTrainer:
 
             self.metrics = {
                 "accuracy": round(accuracy_score(y_test, preds), 4),
-                # "f1_score": round(f1_score(y_test, preds), 4),
+                "f1_score": round(f1_score(y_test, preds), 4),
                 "roc_auc": round(roc_auc_score(y_test, proba), 4),
             }
 
@@ -62,4 +66,8 @@ class ModelTrainer:
 
     def get_metrics(self) -> dict:
         """Return the last computed metrics."""
+        if not self.metrics:
+            self.logger.warning(
+                "get_metrics() called before evaluate() — returning empty dict."
+            )
         return self.metrics

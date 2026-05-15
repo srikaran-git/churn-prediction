@@ -1,8 +1,16 @@
 churn-prediction/
+├── .coverage
 ├── .env.example
 ├── .github
 │   └── workflows
 ├── .gitignore
+├── .pytest_cache
+│   ├── .gitignore
+│   ├── CACHEDIR.TAG
+│   ├── README.md
+│   └── v
+│       └── cache
+│           └── nodeids
 ├── CONTRIBUTING.md
 ├── README.md
 ├── configs
@@ -17,7 +25,8 @@ churn-prediction/
 │   └── app.log
 ├── main.py
 ├── models
-│   └── model_v1.pkl
+│   ├── model_v1.pkl
+│   └── pipeline_v1.pkl
 ├── notebooks
 │   └── messy_code_example.py
 ├── requirements.txt
@@ -32,7 +41,9 @@ churn-prediction/
 │   │   └── preprocessor.py
 │   ├── models
 │   │   ├── __init__.py
-│   │   ├── evaluater.py
+│   │   ├── evaluator.py
+│   │   ├── model_loader.py
+│   │   ├── pipeline_builder.py
 │   │   ├── predictor.py
 │   │   ├── schemas.py
 │   │   └── trainer.py
@@ -44,5 +55,8 @@ churn-prediction/
 │       └── logger.py
 ├── structure.txt
 ├── tests
-│   └── __init__.py
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── test_model.py
+│   └── test_preprocessing.py
 └── train.py
