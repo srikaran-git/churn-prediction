@@ -4,9 +4,6 @@ Unit tests for src/data/preprocessor.py and src/data/data_loader.py.
 Each test covers one specific behaviour — no more, no less.
 """
 
-import pandas as pd
-import pytest
-
 from src.data.preprocessor import fix_total_charges
 
 

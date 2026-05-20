@@ -35,3 +35,8 @@ pip install -r requirements.txt
 
 ## Author
 Karan
+
+## Test Coverage Notes (Day 15)
+- Overall: 38%
+- Not yet tested: data_loader.py, evaluator.py (planned Day 20)
+- predictor.py / schemas.py: covered in Phase 3 (API tests)

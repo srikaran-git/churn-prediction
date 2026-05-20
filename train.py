@@ -1,7 +1,6 @@
 # train.py  (relevant section — replace your existing model training block)
-import joblib
+
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 
 from src.models.model_loader import get_model_info, save_pipeline
 from src.models.pipeline_builder import build_pipeline

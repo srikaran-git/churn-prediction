@@ -1,16 +1,11 @@
 churn-prediction/
-├── .coverage
-├── .env.example
 ├── .github
 │   └── workflows
-├── .gitignore
 ├── .pytest_cache
-│   ├── .gitignore
-│   ├── CACHEDIR.TAG
 │   ├── README.md
 │   └── v
 │       └── cache
-│           └── nodeids
+├── .venv
 ├── CONTRIBUTING.md
 ├── README.md
 ├── configs
@@ -21,16 +16,11 @@ churn-prediction/
 │   └── raw
 │       └── churn.csv
 ├── logs
-│   ├── .gitkeep
-│   └── app.log
 ├── main.py
 ├── models
-│   ├── model_v1.pkl
-│   └── pipeline_v1.pkl
 ├── notebooks
 │   └── messy_code_example.py
 ├── requirements.txt
-├── setup.cfg
 ├── src
 │   ├── api
 │   │   └── __init__.py

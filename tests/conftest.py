@@ -7,6 +7,46 @@ Fixtures here are auto-discovered by pytest — no imports needed in test files.
 import pandas as pd
 import pytest
 
+from unittest.mock import MagicMock, patch
+
+from fastapi.testclient import TestClient
+
+from src.api.app import app, predictor
+from src.models.schemas import PredictionResult
+
+
+@pytest.fixture
+def mock_prediction():
+    """Known PredictionResult to return from mocked predictor."""
+    return PredictionResult(
+        churn_prediction=True,
+        churn_probability=0.7823,
+    )
+
+
+@pytest.fixture
+def client(mock_prediction):
+    """
+    TestClient with model fully loaded (simulated).
+    Use for happy-path and validation tests.
+    """
+    with patch.object(predictor, "load"), \
+         patch.object(predictor, "predict", return_value=mock_prediction):
+        with TestClient(app) as test_client:
+            predictor.pipeline = MagicMock()  # health check sees loaded model
+            yield test_client
+    predictor.pipeline = None  # cleanup after test
+
+
+@pytest.fixture
+def client_unloaded():
+    """
+    TestClient where load() was a no-op — pipeline stays None.
+    Use only for testing the 503 health check path.
+    """
+    with patch.object(predictor, "load"):
+        with TestClient(app) as test_client:
+            yield test_client
 
 @pytest.fixture
 def raw_churn_df():

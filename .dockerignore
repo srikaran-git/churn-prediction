@@ -1,0 +1,17 @@
+# .dockerignore
+.venv/
+.git/
+.github/
+.pytest_cache/
+
+__pycache__/
+*.pyc
+*.pyo
+
+tests/
+notebooks/
+data/
+logs/
+
+.env
+*.egg-info/

@@ -10,7 +10,6 @@ model-ready features. Nothing else.
 from typing import List, Tuple
 
 # Third-party Libraries
-import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
