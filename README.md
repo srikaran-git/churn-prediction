@@ -40,3 +40,5 @@ Karan
 - Overall: 38%
 - Not yet tested: data_loader.py, evaluator.py (planned Day 20)
 - predictor.py / schemas.py: covered in Phase 3 (API tests)
+
+![CI](https://github.com/srikaran-git/churn-prediction/actions/workflows/ci.yml/badge.svg)
