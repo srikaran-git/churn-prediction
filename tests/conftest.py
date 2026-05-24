@@ -30,13 +30,11 @@ def client(mock_prediction):
     TestClient with model fully loaded (simulated).
     Use for happy-path and validation tests.
     """
-    with patch.object(env_validator, "validate_environment"), patch.object(
+    with patch("src.api.app.validate_environment"), patch.object(
         predictor, "load"
     ), patch.object(predictor, "predict", return_value=mock_prediction):
         with TestClient(app) as test_client:
-            predictor.pipeline = MagicMock()  # health check sees loaded model
             yield test_client
-    predictor.pipeline = None  # cleanup after test
 
 
 @pytest.fixture
@@ -45,9 +43,7 @@ def client_unloaded():
     TestClient where load() was a no-op — pipeline stays None.
     Use only for testing the 503 health check path.
     """
-    with patch.object(env_validator, "validate_environment"), patch.object(
-        predictor, "load"
-    ):
+    with patch("src.api.app.validate_environment"), patch.object(predictor, "load"):
         with TestClient(app) as test_client:
             yield test_client
 

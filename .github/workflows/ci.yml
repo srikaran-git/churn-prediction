@@ -35,7 +35,7 @@ jobs:
 
       - name: Run tests (pytest)
         env:
-          ENV: test
+          ENV: development
           LOG_LEVEL: DEBUG
           MODEL_PATH: models/pipeline_v1.pkl
         run: pytest tests/ -v
