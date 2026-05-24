@@ -4,7 +4,7 @@ Shared fixtures for all test modules.
 Fixtures here are auto-discovered by pytest — no imports needed in test files.
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -31,7 +31,9 @@ def client(mock_prediction):
     """
     with patch("src.api.app.validate_environment"), patch.object(
         predictor, "load"
-    ), patch.object(predictor, "predict", return_value=mock_prediction):
+    ), patch.object(predictor, "predict", return_value=mock_prediction), patch.object(
+        predictor, "pipeline", new=MagicMock()
+    ):  # ← add this
         with TestClient(app) as test_client:
             yield test_client
 
