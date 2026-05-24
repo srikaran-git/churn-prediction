@@ -34,4 +34,8 @@ jobs:
         run: flake8 .
 
       - name: Run tests (pytest)
+        env:
+          ENV: test
+          LOG_LEVEL: DEBUG
+          MODEL_PATH: models/pipeline_v1.pkl
         run: pytest tests/ -v
