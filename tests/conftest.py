@@ -4,11 +4,10 @@ Shared fixtures for all test modules.
 Fixtures here are auto-discovered by pytest — no imports needed in test files.
 """
 
-import pandas as pd
-import pytest
-
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
+import pytest
 from fastapi.testclient import TestClient
 
 from src.api.app import app, predictor
@@ -30,8 +29,9 @@ def client(mock_prediction):
     TestClient with model fully loaded (simulated).
     Use for happy-path and validation tests.
     """
-    with patch.object(predictor, "load"), \
-         patch.object(predictor, "predict", return_value=mock_prediction):
+    with patch.object(predictor, "load"), patch.object(
+        predictor, "predict", return_value=mock_prediction
+    ):
         with TestClient(app) as test_client:
             predictor.pipeline = MagicMock()  # health check sees loaded model
             yield test_client
@@ -47,6 +47,7 @@ def client_unloaded():
     with patch.object(predictor, "load"):
         with TestClient(app) as test_client:
             yield test_client
+
 
 @pytest.fixture
 def raw_churn_df():

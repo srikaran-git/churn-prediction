@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from src.models.predictor import ChurnPredictor
 from src.models.schemas import CustomerFeatures, ErrorResponse, PredictionResult
 from src.utils.config_loader import load_config
+from src.utils.env_validator import validate_environment
 from src.utils.exceptions import PredictionError
 from src.utils.logger import get_logger
 
@@ -20,6 +21,7 @@ predictor = ChurnPredictor(model_path=config["paths"]["model_output"])
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_environment()
     logger.info("API starting up — loading pipeline...")
     predictor.load()
     logger.info("Pipeline loaded. API ready.")
@@ -36,6 +38,7 @@ app = FastAPI(
 
 
 # ── Exception handlers ────────────────────────────────────────────────────────
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(
@@ -68,13 +71,9 @@ async def prediction_error_handler(
 
 
 @app.exception_handler(Exception)
-async def unhandled_error_handler(
-    request: Request, exc: Exception
-) -> JSONResponse:
+async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
     """Catch-all — prevents raw tracebacks reaching the client."""
-    logger.error(
-        "Unhandled exception on %s: %s", request.url.path, exc, exc_info=True
-    )
+    logger.error("Unhandled exception on %s: %s", request.url.path, exc, exc_info=True)
     return JSONResponse(
         status_code=500,
         content=ErrorResponse(
@@ -85,6 +84,7 @@ async def unhandled_error_handler(
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+
 
 @app.get("/", tags=["Health"])
 def root() -> dict:

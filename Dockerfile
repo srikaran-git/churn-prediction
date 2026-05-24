@@ -11,7 +11,6 @@ RUN pip install --no-cache-dir -r requirements-prod.txt
 # Application code
 COPY src/ ./src/
 COPY configs/ ./configs/
-COPY models/pipeline_v1.pkl ./models/pipeline_v1.pkl
 
 # Port
 EXPOSE 8000

@@ -4,6 +4,8 @@ env/
 
 # Real secrets file — NEVER upload this
 .env
+.env.development
+.env.production
 
 # Python auto-generated files — not needed
 __pycache__/

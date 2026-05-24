@@ -8,7 +8,8 @@ from pydantic import BaseModel, ConfigDict, Field
 class CustomerFeatures(BaseModel):
     """Input schema — validates one customer record before it reaches the model."""
 
-    model_config = ConfigDict(populate_by_name=True,
+    model_config = ConfigDict(
+        populate_by_name=True,
         json_schema_extra={
             "example": {
                 "gender": "Female",
@@ -36,94 +37,117 @@ class CustomerFeatures(BaseModel):
 
     # ── Numeric features ──────────────────────────────────────────────────────
     tenure: int = Field(
-        ..., ge=0, alias="tenure",
+        ...,
+        ge=0,
+        alias="tenure",
         description="Months as a customer",
         examples=[12],
     )
     monthly_charges: float = Field(
-        ..., gt=0, alias="MonthlyCharges",
+        ...,
+        gt=0,
+        alias="MonthlyCharges",
         description="Monthly bill in USD",
         examples=[70.35],
     )
     total_charges: float = Field(
-        ..., ge=0, alias="TotalCharges",
+        ...,
+        ge=0,
+        alias="TotalCharges",
         description="Total billed to date in USD",
         examples=[844.20],
     )
     senior_citizen: int = Field(
-        ..., ge=0, le=1, alias="SeniorCitizen",
+        ...,
+        ge=0,
+        le=1,
+        alias="SeniorCitizen",
         description="1 if senior citizen, 0 otherwise",
         examples=[0],
     )
 
     # ── Categorical features ──────────────────────────────────────────────────
     gender: Literal["Male", "Female"] = Field(
-        ..., alias="gender",
+        ...,
+        alias="gender",
         description="Customer gender",
         examples=["Female"],
     )
     partner: Literal["Yes", "No"] = Field(
-        ..., alias="Partner",
+        ...,
+        alias="Partner",
         description="Whether the customer has a partner",
         examples=["Yes"],
     )
     dependents: Literal["Yes", "No"] = Field(
-        ..., alias="Dependents",
+        ...,
+        alias="Dependents",
         description="Whether the customer has dependents",
         examples=["No"],
     )
     phone_service: Literal["Yes", "No"] = Field(
-        ..., alias="PhoneService",
+        ...,
+        alias="PhoneService",
         description="Whether the customer has phone service",
         examples=["Yes"],
     )
     multiple_lines: Literal["Yes", "No", "No phone service"] = Field(
-        ..., alias="MultipleLines",
+        ...,
+        alias="MultipleLines",
         description="Whether the customer has multiple lines",
         examples=["No"],
     )
     internet_service: Literal["DSL", "Fiber optic", "No"] = Field(
-        ..., alias="InternetService",
+        ...,
+        alias="InternetService",
         description="Internet service provider type",
         examples=["Fiber optic"],
     )
     online_security: Literal["Yes", "No", "No internet service"] = Field(
-        ..., alias="OnlineSecurity",
+        ...,
+        alias="OnlineSecurity",
         description="Whether the customer has online security",
         examples=["No"],
     )
     online_backup: Literal["Yes", "No", "No internet service"] = Field(
-        ..., alias="OnlineBackup",
+        ...,
+        alias="OnlineBackup",
         description="Whether the customer has online backup",
         examples=["Yes"],
     )
     device_protection: Literal["Yes", "No", "No internet service"] = Field(
-        ..., alias="DeviceProtection",
+        ...,
+        alias="DeviceProtection",
         description="Whether the customer has device protection",
         examples=["No"],
     )
     tech_support: Literal["Yes", "No", "No internet service"] = Field(
-        ..., alias="TechSupport",
+        ...,
+        alias="TechSupport",
         description="Whether the customer has tech support",
         examples=["No"],
     )
     streaming_tv: Literal["Yes", "No", "No internet service"] = Field(
-        ..., alias="StreamingTV",
+        ...,
+        alias="StreamingTV",
         description="Whether the customer streams TV",
         examples=["Yes"],
     )
     streaming_movies: Literal["Yes", "No", "No internet service"] = Field(
-        ..., alias="StreamingMovies",
+        ...,
+        alias="StreamingMovies",
         description="Whether the customer streams movies",
         examples=["Yes"],
     )
     contract: Literal["Month-to-month", "One year", "Two year"] = Field(
-        ..., alias="Contract",
+        ...,
+        alias="Contract",
         description="Contract term",
         examples=["Month-to-month"],
     )
     paperless_billing: Literal["Yes", "No"] = Field(
-        ..., alias="PaperlessBilling",
+        ...,
+        alias="PaperlessBilling",
         description="Whether the customer uses paperless billing",
         examples=["Yes"],
     )
@@ -133,10 +157,12 @@ class CustomerFeatures(BaseModel):
         "Bank transfer (automatic)",
         "Credit card (automatic)",
     ] = Field(
-        ..., alias="PaymentMethod",
+        ...,
+        alias="PaymentMethod",
         description="Payment method",
         examples=["Electronic check"],
     )
+
 
 class PredictionResult(BaseModel):
     """Output schema — documents and validates what your pipeline returns."""
@@ -156,7 +182,9 @@ class PredictionResult(BaseModel):
         ..., description="True if customer is predicted to churn"
     )
     churn_probability: float = Field(
-        ..., ge=0.0, le=1.0,
+        ...,
+        ge=0.0,
+        le=1.0,
         description="Probability of churn between 0 and 1",
         examples=[0.7823],
     )
@@ -166,6 +194,7 @@ class PredictionResult(BaseModel):
     model_version: Optional[str] = Field(
         None, description="Version of the model that made this prediction"
     )
+
 
 class ErrorResponse(BaseModel):
     """Consistent error shape returned by all error handlers."""

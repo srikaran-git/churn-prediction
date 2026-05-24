@@ -5,5 +5,5 @@ if __name__ == "__main__":
         "src.api.app:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,   # auto-restarts on code change — dev only
+        reload=True,  # auto-restarts on code change — dev only
     )

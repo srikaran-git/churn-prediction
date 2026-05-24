@@ -17,13 +17,16 @@ churn-prediction/
 │       └── churn.csv
 ├── logs
 ├── main.py
+├── main_api.py
 ├── models
 ├── notebooks
 │   └── messy_code_example.py
+├── requirements-prod.txt
 ├── requirements.txt
 ├── src
 │   ├── api
-│   │   └── __init__.py
+│   │   ├── __init__.py
+│   │   └── app.py
 │   ├── data
 │   │   ├── __init__.py
 │   │   ├── data_loader.py
@@ -47,6 +50,7 @@ churn-prediction/
 ├── tests
 │   ├── __init__.py
 │   ├── conftest.py
+│   ├── test_api.py
 │   ├── test_model.py
 │   └── test_preprocessing.py
 └── train.py

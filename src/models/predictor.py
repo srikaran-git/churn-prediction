@@ -26,7 +26,9 @@ class ChurnPredictor:
             raise PredictionError("Model not loaded. Call load() first.")
 
         input_df = pd.DataFrame([features.model_dump(by_alias=True)])
-        logger.info(f"Running prediction for input: {input_df.to_dict(orient='records')}")
+        logger.info(
+            f"Running prediction for input: {input_df.to_dict(orient='records')}"
+        )
 
         prediction = self.pipeline.predict(input_df)[0]
         probability = self.pipeline.predict_proba(input_df)[0][1]
