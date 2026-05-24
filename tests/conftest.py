@@ -4,7 +4,7 @@ Shared fixtures for all test modules.
 Fixtures here are auto-discovered by pytest — no imports needed in test files.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -12,7 +12,6 @@ from fastapi.testclient import TestClient
 
 from src.api.app import app, predictor
 from src.models.schemas import PredictionResult
-from src.utils import env_validator
 
 
 @pytest.fixture
