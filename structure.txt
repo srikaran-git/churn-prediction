@@ -1,12 +1,14 @@
 churn-prediction/
 ├── .github
 │   └── workflows
+│       └── ci.yml
 ├── .pytest_cache
 │   ├── README.md
 │   └── v
 │       └── cache
 ├── .venv
 ├── CONTRIBUTING.md
+├── DEPLOYMENT.md
 ├── README.md
 ├── configs
 │   └── config.yaml
@@ -15,6 +17,7 @@ churn-prediction/
 │   ├── processed
 │   └── raw
 │       └── churn.csv
+├── docker-compose.yml
 ├── logs
 ├── main.py
 ├── main_api.py
@@ -43,6 +46,7 @@ churn-prediction/
 │   └── utils
 │       ├── __init__.py
 │       ├── config_loader.py
+│       ├── env_validator.py
 │       ├── exceptions.py
 │       ├── file_utils.py
 │       └── logger.py
