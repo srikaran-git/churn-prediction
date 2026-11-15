@@ -131,7 +131,7 @@ def log_confusion_matrix(
     cm = confusion_matrix(y_test, y_pred)
 
     logger.info("Confusion Matrix:")
-    logger.info(f"                 Predicted No  Predicted Yes")
+    logger.info("                 Predicted No  Predicted Yes")
     logger.info(f"  Actual No    :     {cm[0][0]:<10}  {cm[0][1]}")
     logger.info(f"  Actual Yes   :     {cm[1][0]:<10}  {cm[1][1]}")
 

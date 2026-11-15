@@ -83,7 +83,7 @@ def validate_no_duplicate_rows(df: pd.DataFrame) -> bool:
     if duplicate_count > 0:
         logger.warning(
             f"Duplicate rows found in data: {duplicate_count}"
-            f" duplicate rows ({duplicate_count/len(df):.1%} total)"
+            f" duplicate rows ({duplicate_count / len(df):.1%} total)"
         )
         return False
     logger.info("No duplicate rows found.")
