@@ -82,15 +82,14 @@ def log_metrics(metrics: Dict[str, float]) -> None:
     Args:
         metrics: Dictionary from evaluate_model().
     """
-    
+
     logger.info("MODEL PERFORMANCE")
-  
+
     logger.info(f"  Accuracy  : {metrics['accuracy']:.4f}")
     logger.info(f"  Precision : {metrics['precision']:.4f}")
     logger.info(f"  Recall    : {metrics['recall']:.4f}")
     logger.info(f"  F1 Score  : {metrics['f1_score']:.4f}")
     logger.info(f"  ROC-AUC   : {metrics['roc_auc']:.4f}")
-    
 
 
 def log_classification_report(
