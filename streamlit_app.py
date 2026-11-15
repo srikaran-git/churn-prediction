@@ -5,10 +5,12 @@ import streamlit as st
 st.title("Telco Customer Churn Predictor")
 st.markdown("Enter customer details to predict churn probability.")
 
+
 # Load model
 @st.cache_resource
 def load_model():
     return joblib.load("models/pipeline_v1.pkl")
+
 
 pipeline = load_model()
 
@@ -20,10 +22,15 @@ with col1:
     monthly_charges = st.number_input("Monthly Charges ($)", 0.0, 200.0, 65.0)
     contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
     internet_service = st.selectbox("Internet Service", ["DSL", "Fiber optic", "No"])
-    payment_method = st.selectbox("Payment Method", [
-        "Electronic check", "Mailed check",
-        "Bank transfer (automatic)", "Credit card (automatic)"
-    ])
+    payment_method = st.selectbox(
+        "Payment Method",
+        [
+            "Electronic check",
+            "Mailed check",
+            "Bank transfer (automatic)",
+            "Credit card (automatic)",
+        ],
+    )
 
 with col2:
     gender = st.selectbox("Gender", ["Male", "Female"])
@@ -33,27 +40,31 @@ with col2:
     paperless_billing = st.selectbox("Paperless Billing", ["Yes", "No"])
 
 # Fixed defaults for remaining fields
-input_data = pd.DataFrame([{
-    "tenure": tenure,
-    "MonthlyCharges": monthly_charges,
-    "TotalCharges": monthly_charges * tenure,
-    "Contract": contract,
-    "InternetService": internet_service,
-    "PaymentMethod": payment_method,
-    "gender": gender,
-    "SeniorCitizen": senior_citizen,
-    "Partner": partner,
-    "Dependents": dependents,
-    "PhoneService": "Yes",
-    "MultipleLines": "No",
-    "OnlineSecurity": "No",
-    "OnlineBackup": "No",
-    "DeviceProtection": "No",
-    "TechSupport": "No",
-    "StreamingTV": "No",
-    "StreamingMovies": "No",
-    "PaperlessBilling": paperless_billing,
-}])
+input_data = pd.DataFrame(
+    [
+        {
+            "tenure": tenure,
+            "MonthlyCharges": monthly_charges,
+            "TotalCharges": monthly_charges * tenure,
+            "Contract": contract,
+            "InternetService": internet_service,
+            "PaymentMethod": payment_method,
+            "gender": gender,
+            "SeniorCitizen": senior_citizen,
+            "Partner": partner,
+            "Dependents": dependents,
+            "PhoneService": "Yes",
+            "MultipleLines": "No",
+            "OnlineSecurity": "No",
+            "OnlineBackup": "No",
+            "DeviceProtection": "No",
+            "TechSupport": "No",
+            "StreamingTV": "No",
+            "StreamingMovies": "No",
+            "PaperlessBilling": paperless_billing,
+        }
+    ]
+)
 
 if st.button("Predict Churn", type="primary"):
     probability = pipeline.predict_proba(input_data)[0][1]
