@@ -1,6 +1,6 @@
-import streamlit as st
 import joblib
 import pandas as pd
+import streamlit as st
 
 st.title("Telco Customer Churn Predictor")
 st.markdown("Enter customer details to predict churn probability.")
