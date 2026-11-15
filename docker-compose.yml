@@ -9,13 +9,25 @@ services:
       - ./models:/app/models
       - ./logs:/app/logs
     env_file:
-      - path:  ${APP_ENV_FILE:-.env.development}
+      - path: ${APP_ENV_FILE:-.env.development}
         required: false
     environment:
       - ENV=${ENV:-development}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 15s
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

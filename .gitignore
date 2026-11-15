@@ -6,6 +6,7 @@ env/
 .env
 .env.development
 .env.production
+.env.report
 
 # Python auto-generated files — not needed
 __pycache__/
@@ -22,8 +23,11 @@ data/raw/
 data/processed/
 
 # Saved model files
+!models/pipeline_v1.pkl
 models/*.pkl
 models/*.joblib
+models/*.gguf
+**/models/*.gguf
 
 # Log files
 logs/

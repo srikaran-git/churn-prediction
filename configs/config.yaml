@@ -45,4 +45,4 @@ features:
     - PaymentMethod
 
 paths:
-  model_output: models/pipeline_v1.pkl
+  model_output: "models/pipeline_v1.pkl"
